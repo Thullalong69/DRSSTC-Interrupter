@@ -105,6 +105,14 @@ def safe_power_off(reason=None):
     if reason:
         print(f"[Power-Off] {reason}")
 
+def get_power_state():
+    """
+    Liefert den aktuellen Power-Status basierend auf Relaiszuständen (active low).
+    """
+    softstart_on = pi.read(SOFTSTART_PIN) == 0
+    fullpower_on = pi.read(FULLPOWER_PIN) == 0
+    return softstart_on or fullpower_on
+
 @app.route('/start_cw', methods=['POST'])
 def start_cw():
     """
@@ -564,27 +572,34 @@ def toggle_power():
                 # Akustische Bestätigung
                 play_beep(SPEAKER_PIN, freq=784, duration_ms=1000)   # G5
 
+                power_active = get_power_state()
                 return jsonify({
                     "status": "success",
                     "message": "Softstart abgeschlossen, Volllast aktiviert",
-                    "power": True
+                    "power": power_active
                 })
 
             safe_power_off("Power aus per API")
+            power_active = get_power_state()
             print("Alle Relais deaktiviert (SOFTSTART_PIN und FULLPOWER_PIN HIGH).")
             return jsonify({
                 "status": "success",
                 "message": "System ausgeschaltet",
-                "power": False
+                "power": power_active
             })
     except Exception as e:
         # Fehlerbehandlung und Notabschaltung
         safe_power_off(f"Fehler beim Schalten: {e}")
+        power_active = get_power_state()
         return jsonify({
             "status": "error",
             "message": f"Fehler beim Schalten: {str(e)}",
-            "power": False
+            "power": power_active
         }), 500
+
+@app.route('/power_status', methods=['GET'])
+def power_status():
+    return jsonify({"power": get_power_state()})
         
 
 @app.route('/ping_status', methods=['GET'])
