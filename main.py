@@ -39,6 +39,7 @@ is_playing = False  # Statusvariable für MIDI-Wiedergabe
 burst_active = False  # Globale Variable für Burst-Modus-Status
 cw_running = False
 cw_lock = threading.Lock()
+power_lock = threading.Lock()
 
 def play_beep(pin, freq=1000, duration_ms=200):
     """
@@ -94,6 +95,15 @@ def _stop_all_outputs():
         pass
     # Pin Low
     pi.write(INTERRUPTER_PIN, 0)
+
+def safe_power_off(reason=None):
+    """
+    Fail-safe: Schaltet beide Relais zuverlässig ab (active low -> HIGH = AUS).
+    """
+    pi.write(SOFTSTART_PIN, 1)
+    pi.write(FULLPOWER_PIN, 1)
+    if reason:
+        print(f"[Power-Off] {reason}")
 
 @app.route('/start_cw', methods=['POST'])
 def start_cw():
@@ -196,14 +206,24 @@ def set_burst():
     Berechnet daraus die Periodendauer und startet eine Interrupter-Sequenz.
     Achtet auf MAX_T_ON, MIN_T_OFF und MAX_DUTY_CYCLE.
     """
+    global burst_active
     try:
         bps = float(request.form.get('bps', 0))
         t_on = int(request.form.get('t_on', 0))
 
+        if t_on == 0:
+            _stop_all_outputs()
+            burst_active = False
+            return jsonify({
+                "status": "success",
+                "message": "Burst-Modus deaktiviert (t_ON = 0 µs)",
+                "active": False
+            })
+
         if bps <= 0:
             return jsonify({"status": "error", "message": "bps muss > 0 sein"}), 400
 
-        if t_on <= 0 or t_on > MAX_T_ON:
+        if t_on < 0 or t_on > MAX_T_ON:
             return jsonify({
                 "status": "error",
                 "message": f"t_ON muss zwischen 1 und {MAX_T_ON} µs liegen"
@@ -230,10 +250,12 @@ def set_burst():
         duty_cycle = int((t_on / 1000) / period_ms * 1_000_000)  # für pigpio
 
         pi.hardware_PWM(INTERRUPTER_PIN, frequency, duty_cycle)
+        burst_active = True
 
         return jsonify({
             "status": "success",
-            "message": f"Burst-Modus aktiv: {bps} BPS, t_ON: {t_on} µs, t_OFF: {t_off_ms:.2f} ms, Duty: {duty_percent:.2f}%"
+            "message": f"Burst-Modus aktiv: {bps} BPS, t_ON: {t_on} µs, t_OFF: {t_off_ms:.2f} ms, Duty: {duty_percent:.2f}%",
+            "active": True
         })
 
     except Exception as e:
@@ -278,22 +300,22 @@ def softstart_sequence():
     print("Softstart gestartet...")
 
     try:
-        # Schalte das Relais für den 56-Ohm-Widerstand ein
-        pi.write(SOFTSTART_PIN, 0)  # RELAIS_PIN_1 auf HIGH setzen
-        print("Relais 1 (2,2k -Ohm-Widerstand) aktiviert.")
-        time.sleep(20)  # Warte 20 sekunden für das Vorladen der Kondensatoren
+        with power_lock:
+            # Schalte das Relais für den 56-Ohm-Widerstand ein (active low)
+            pi.write(SOFTSTART_PIN, 0)
+            print("Relais 1 (Softstart) aktiviert.")
+            time.sleep(20)  # Warte 20 Sekunden für das Vorladen der Kondensatoren
 
-        # Schalte das Relais für den direkten Betrieb ein und das erste aus
-
-
-        pi.write(FULLPOWER_PIN, 0)  # RELAIS_PIN_2 auf HIGH setzen
-        print("Relais 2 (Direkter Betrieb) aktiviert.")
+            # Schalte das Relais für den direkten Betrieb ein und Softstart aus
+            pi.write(FULLPOWER_PIN, 0)
+            pi.write(SOFTSTART_PIN, 1)
+            print("Relais 2 (Direkter Betrieb) aktiviert.")
 
         # Setze den Fortschritt auf 100%
         softstart_progress = 100
         print("Softstart abgeschlossen.")
     except Exception as e:
-        print(f"Fehler während des Softstarts: {e}")
+        safe_power_off(f"Fehler während des Softstarts: {e}")
     finally:
         softstart_active = False
     
@@ -324,8 +346,13 @@ def set_ton_toff():
     t_on = request.form.get('t_on', type=int)
     t_off = request.form.get('t_off', type=int)
 
-    if not t_on or not t_off:
+    if t_on is None or t_off is None:
         return jsonify({"status": "error", "message": "t_ON oder t_OFF fehlt"}), 400
+    if t_on == 0:
+        _stop_all_outputs()
+        return jsonify({"status": "success", "message": "t_ON = 0 µs, Interrupter deaktiviert"})
+    if t_on < 0 or t_off <= 0:
+        return jsonify({"status": "error", "message": "t_ON oder t_OFF ungültig"}), 400
     
         
     # PWM setzen
@@ -343,6 +370,9 @@ def set_duty_cycle():
 
     if duty_cycle is None or frequency is None:
         return jsonify({"status": "error", "message": "Ungültige Eingabedaten"}), 400
+    if duty_cycle <= 0:
+        _stop_all_outputs()
+        return jsonify({"status": "success", "message": "Duty Cycle = 0%, Interrupter deaktiviert"}), 200
 
     # Berechne die on-time in Mikrosekunden
     period_us = (1 / frequency) * 1_000_000  # Periode in Mikrosekunden
@@ -519,29 +549,29 @@ def toggle_power():
     power_state = data.get('power', False)
     
     try:
-        if power_state:
-            # Softstart aktivieren
-            pi.write(SOFTSTART_PIN, 0)  # 56-Ohm-Widerstand aktivieren
-            print("Softstart aktiviert (SOFTSTART_PIN HIGH).")
-            time.sleep(20)  # Warte 20 Sekunden
+        with power_lock:
+            if power_state:
+                # Softstart aktivieren (active low)
+                pi.write(SOFTSTART_PIN, 0)
+                print("Softstart aktiviert (SOFTSTART_PIN LOW).")
+                time.sleep(20)  # Warte 20 Sekunden
 
-            # Volllast aktivieren und Softstart deaktivieren
-            pi.write(FULLPOWER_PIN, 0)  # Volllast aktivieren
-            print("325 VDC aktiviert full Mains live")
+                # Volllast aktivieren und Softstart deaktivieren
+                pi.write(FULLPOWER_PIN, 0)
+                pi.write(SOFTSTART_PIN, 1)
+                print("325 VDC aktiviert full Mains live")
 
-            # Akustische Bestätigung
-            play_beep(SPEAKER_PIN, freq=784, duration_ms=1000)   # G5
+                # Akustische Bestätigung
+                play_beep(SPEAKER_PIN, freq=784, duration_ms=1000)   # G5
 
-            return jsonify({
-                "status": "success", 
-                "message": "Softstart abgeschlossen, Volllast aktiviert",
-                "power": True
-            })
-        else:
-            # Relais deaktivieren
-            pi.write(SOFTSTART_PIN, 1)
-            pi.write(FULLPOWER_PIN, 1)
-            print("Alle Relais deaktiviert (SOFTSTART_PIN und FULLPOWER_PIN LOW).")
+                return jsonify({
+                    "status": "success",
+                    "message": "Softstart abgeschlossen, Volllast aktiviert",
+                    "power": True
+                })
+
+            safe_power_off("Power aus per API")
+            print("Alle Relais deaktiviert (SOFTSTART_PIN und FULLPOWER_PIN HIGH).")
             return jsonify({
                 "status": "success",
                 "message": "System ausgeschaltet",
@@ -549,9 +579,7 @@ def toggle_power():
             })
     except Exception as e:
         # Fehlerbehandlung und Notabschaltung
-        pi.write(SOFTSTART_PIN, 1)
-        pi.write(FULLPOWER_PIN, 1)
-        print(f"Fehler beim Schalten: {e}")
+        safe_power_off(f"Fehler beim Schalten: {e}")
         return jsonify({
             "status": "error",
             "message": f"Fehler beim Schalten: {str(e)}",
@@ -575,7 +603,3 @@ def ping_status():
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0')
-
-
-
-
