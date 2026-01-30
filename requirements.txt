@@ -1,0 +1,4 @@
+pigpio
+flask
+mido
+matplotlib

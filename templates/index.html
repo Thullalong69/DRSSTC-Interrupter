@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRSSTC Interrupter Steuerung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: black;
+            color: #39ff14;
+            margin: 0;
+            padding: 20px;
+        }
+        .header-container {
+            display: flex;
+            align-items: center;       /* Zentriert die Elemente vertikal */
+            justify-content: center;    /* Zentriert die gesamte Zeile horizontal */
+            gap: 20px;                  /* Abstand zwischen den Elementen */
+            padding: 10px;
+        }
+        .text-container {
+            text-align: center;         /* Zentriert den Text innerhalb der Textspalte */
+        }
+
+        .header-container h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #39ff14;             /* Farbe für die Überschrift */
+        }
+
+        .made-by {
+            font-size: 16px;
+            color: #39ff14;             /* Farbe für den „made by“-Text */
+            margin: 0;
+        }
+        h1 {
+            text-align: center;
+            color: #39ff14;
+        }
+        .master-power {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #39ff14;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .tabs {
+            display: flex;
+            background-color: #444;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .tabs button {
+            flex: 1;
+            padding: 14px;
+            background-color: #333;
+            color: #39ff14;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        .tabs button:hover {
+            background-color: #575757;
+        }
+        .tabs button.active {
+            background-color: #39ff14;
+            color: black;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: black;
+            color: #39ff14;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            border: 1px solid #39ff14;
+            margin-top: 20px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+            appearance: none;
+            -webkit-appearance: none;
+            background: #daa520;
+            height: 6px;
+            border-radius: 5px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+        }
+        .output {
+            font-size: 18px;
+            font-weight: bold;
+            color: #39ff14;
+        }
+        canvas {
+            display: block;
+        }
+        #excite_button {
+            font-size: 32px;           /* Große Schrift */
+            padding: 20px 50px;        /* Mehr Platz um den Text herum */
+            border-radius: 15px;       /* Runde Ecken für ein modernes Aussehen */
+            background-color: #39ff14; /* Grüne Hintergrundfarbe */
+            color: black;              /* Kontrastreiche Schrift */
+            border: none;              /* Entferne die Rahmen */
+            cursor: pointer;           /* Hand-Cursor beim Drüberfahren */
+            width: 100%;               /* Passt sich der Breite des Containers an */
+            max-width: 300px;          /* Begrenzung der Maximalbreite */
+            margin: 20px auto;         /* Zentriere den Button */
+            display: block;            /* Button als Blockelement */
+        }
+        
+        #excite_button:hover {
+            background-color: #32e412; /* Leichte Farbanpassung beim Hover */
+        }
+        #single_shot_button {
+            font-size: 28px;         /* Noch größere Schriftgröße */
+            padding: 20px 40px;      /* Erhöhtes Padding für mehr Höhe und Breite */
+            border-radius: 10px;     /* Runde Ecken für ein modernes Aussehen */
+            background-color: #39ff14;  /* Passende Hintergrundfarbe */
+            color: black;            /* Textfarbe */
+            border: none;            /* Entfernt den Rahmen */
+            cursor: pointer;         /* Hand-Cursor bei Hover */
+        }
+        
+        #single_shot_button:hover {
+            background-color: #32e412;  /* Leichte Farbanpassung beim Hover */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="master-power">
+        <label class="switch">
+            <input type="checkbox" id="masterPowerSwitch" onclick="togglePower()">
+            <span class="slider"></span>
+        </label>
+        <span style="color: #39ff14;">Master Power</span>
+    </div>
+    
+    <div class="header-container">
+        <img src="static/logo.png" alt="HADES v3 DRSSTC Logo" style="height: 120px; margin: 0 30px;">
+        <div class="text-container">
+            <h1>DRSSTC Interrupter Steuerung</h1>
+            <p class="made-by">--&gt; made by Teslathull</p>
+        </div>
+    </div>
+    <div id="softstartStatus" style="display: none; text-align: center; margin-top: 20px;">
+        <div style="background-color: #444; border-radius: 10px; width: 100%; height: 30px; margin: 0 auto; position: relative;">
+            <div id="softstartProgressBar" style="width: 0%; height: 100%; background-color: #39ff14; border-radius: 10px; transition: width 0.5s;"></div>
+        </div>
+        <p id="softstartProgressText" style="color: #39ff14; margin-top: 10px;">Softstart aktiv... <span id="softstartProgress">0</span>%</p>
+    </div>
+    
+    
+    
+    <!-- Registerkarten -->
+    <div class="tabs">
+        <button class="tablink" onclick="openTab(event, 'ton_toff')" id="defaultTab">t_ON/t_OFF</button>
+        <button class="tablink" onclick="openTab(event, 'burst_mode')">Burst_mode/BPS</button>
+        <button class="tablink" onclick="openTab(event, 'single_shot')">Single Shot</button>
+        <button class="tablink" onclick="openTab(event, 'midi')">MIDI-Mode</button>
+        <button class="tablink" onclick="openTab(event, 'cw-mode')">CW-Mode-diagnose only</button>
+    </div>
+
+    <!-- t_ON/t_OFF Modus -->
+    <div id="ton_toff" class="tab-content">
+        <h2>t_ON/t_OFF Modus</h2>
+        <label class="slider-label" for="t_on">t_ON (µs):</label>
+        <input type="range" id="t_on" name="t_on" min="1" max="150" value="1" oninput="updateTonToff()">
+        <output id="t_on_output">1</output> µs
+        <p></p>
+        <label class="slider-label" for="t_off">t_OFF (ms):</label>
+        <input type="range" id="t_off" name="t_off" min="5" max="50" value="50" oninput="updateTonToff()">
+        <output id="t_off_output">50</output> ms
+    </div>
+
+    <div id="burst_mode" class="tab-content">
+        <h2>Burst-Mode</h2>
+        <label for="burst_t_on">t_ON pro Burst (µs):</label>
+        <input type="range" id="burst_t_on" min="1" max="150" value="1" oninput="updateBurstSettings()">
+        <output id="burst_t_on_output">1</output> µs
+        <p></p>
+        <label for="bps">BPS (Bursts/Sekunde):</label>
+        <input type="range" id="bps" min="1" max="30" value="1" oninput="updateBurstSettings()">
+        <output id="bps_output">1</output> BPS
+        <br>
+        
+    </div>
+
+    <!-- Single Shot Modus -->
+    <div id="single_shot" class="tab-content">
+        <h2>Single Shot Modus</h2>
+        <form>
+            <!-- Schieberegler für t_ON -->
+            <label class="slider-label" for="single_ton">t_ON (µs):</label>
+            <input type="range" id="single_ton" name="single_ton" min="1" max="250" value="50" oninput="updateSingleShotTon()">
+            <output id="single_ton_output">50</output> µs
+            <br><br>
+            <!-- Knopf zum Auslösen des Single Shots -->
+            <input type="button" id="single_shot_button" value="Single Shot abfeuern" onclick="fireSingleShot()" width="200px"height="200px">
+
+        </form>
+        <br>
+        <span id="single-shot-error-message" style="color: red;"></span>  <!-- Fehlermeldung bei ungültigen Werten -->
+    </div>
+    <div id="midi" class="tab-content">
+        <h2>MIDI File Abspielen</h2>
+        <label for="midi_file">MIDI-Datei auswählen:</label>
+        <select id="midi_file" name="midi_file">
+            <!-- Diese Optionen werden vom Backend bereitgestellt -->
+            {% for file in midi_files %}
+                <option value="{{ file }}">{{ file }}</option>
+            {% endfor %}
+        </select>
+        <br><br>
+    
+        <!-- Play/Stop Button -->
+        <button id="playStopButton" onclick="togglePlayStop()">Play</button>
+
+        <!-- On-Time Steuerung für MIDI-Mode -->
+        <label for="midiOnTime">Max t_ON (µs):</label>
+        <input type="range" id="midiOnTime" min="1" max="100" value="50">
+        <span id="midiOnTimeValue">50</span> µs
+        <br><br>
+    
+        <!-- Slider für Pitch Control -->
+        <label for="pitchControl">Pitch (Tonhöhe):</label>
+        <input type="range" id="pitchControl" min="-12" max="12" value="0">
+        <span id="pitchValue">0</span> Halbtonschritte
+    
+        <br><br>
+      <!-- CW (Diagnose) -->
+  </div>
+  <div id="cw-mode" class="tab-content">
+    <h2>Kontinuierlich (CW) – Diagnosemodus</h2>
+    <label class="pill" style="display:inline-flex; align-items:center; gap:10px; background:#1d1d1d; padding:10px 12px; border-radius:999px; border:1px solid #2a2a2a;">
+      <input type="checkbox" id="cw_enable" />
+      <span>Ich weiß, was ich tue (CW freischalten)</span>
+    </label>
+    <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+      <button id="cw_start_button" disabled>CW START</button>
+      <button id="cw_stop_button" disabled>STOP</button>
+      <span class="note">Checkbox aktivieren ⇒ Start freigeben. STOP ist immer möglich, sobald CW läuft.</span>
+    </div>
+    </div>
+    <div style="width: 100%; height: 200px; margin: 0 auto;">
+        <canvas id="pwmOscilloscope"></canvas>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const canvas = document.getElementById('pwmOscilloscope');
+        const ctx = canvas.getContext('2d');
+
+        // Funktion zur dynamischen Anpassung des Canvas an die Bildschirmbreite
+        function resizeCanvas() {
+            const width = window.innerWidth;
+            const height = 133;  // Die gewünschte Höhe, z.B. 133px
+
+            // Setze die Canvas-Abmessungen dynamisch
+            canvas.width = width;
+            canvas.height = height;
+
+            // Stelle sicher, dass die Schrift korrekt skaliert wird, indem die Chart.js-Instanz aktualisiert wird
+            pwmOscilloscopeChart.resize();
+        }
+
+        // Funktion zur Berechnung der PWM-Werte
+         // Funktion zur Aktualisierung der PWM-Daten für Burst-Mode
+         function getPwmValues(mode) {
+            let t_on_us, t_off_ms;
+            if (mode === 'ton_toff') {
+                t_on_us = parseInt(document.getElementById('t_on').value);
+                t_off_ms = parseFloat(document.getElementById('t_off').value);
+            } else if (mode === 'burst_mode') {
+                const bps = parseFloat(document.getElementById('bps').value);
+                t_on_us = parseFloat(document.getElementById('burst_t_on').value);
+                const period_us = 1_000_000 / bps;
+                const t_off_us = period_us - t_on_us;
+                t_off_ms = t_off_us / 1000;
+            }
+            return { t_on_us, t_off_ms };
+        }
+        
+        function updatePwmData(mode) {
+            const { t_on_us, t_off_ms } = getPwmValues(mode);
+            let pwmData = [];
+            let currentTime = 0;
+        
+            for (let i = 0; i < 10; i++) {
+                pwmData.push({ x: currentTime, y: 1 }); // HIGH Zustand
+                currentTime += t_on_us; // Hinzufügen von t_ON in µs
+                pwmData.push({ x: currentTime, y: 0 }); // Wechsel auf LOW
+                currentTime += t_off_ms * 1000; // Hinzufügen von t_OFF (ms zu µs umwandeln)
+            }
+        
+            return pwmData;
+        }
+        
+
+        // Chart.js Konfiguration für Oszilloskop
+        const pwmOscilloscopeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'PWM Signal',
+                    borderColor: '#39ff14',
+                    backgroundColor: 'rgba(0, 0, 0, 0)',
+                    borderWidth: 2,
+                    data: updatePwmData('ton_toff'),
+                    fill: false,
+                    stepped: true, // Rechteckwellenform
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        title: {
+                            display: true,
+                            text: 'Zeit (ms)' // Zeit jetzt in Millisekunden
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value / 1000; // µs in ms umwandeln
+                            },
+                            maxTicksLimit: 10,
+                            autoSkip: true
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Spannung'
+                        },
+                        min: 0,
+                        max: 1,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                elements: {
+                    point: {
+                        radius: 0 // Keine Punkte, nur Linien
+                    }
+                }
+            }
+        });
+
+        // Funktion zur Aktualisierung der Wellenform
+        function refreshChart(mode) {
+            pwmOscilloscopeChart.data.datasets[0].data = updatePwmData(mode);
+            pwmOscilloscopeChart.options.scales.x.title.text = 'Zeit (ms)';
+            pwmOscilloscopeChart.update();
+        }
+        
+        // Initialisierung für den `t_ON/t_OFF` Modus
+        refreshChart('ton_toff');
+
+        // Schieberegler-Event-Listener für automatische Aktualisierung
+        document.getElementById('t_on').addEventListener('input', function() {
+            refreshChart('ton_toff');
+        });
+        
+        document.getElementById('t_off').addEventListener('input', function() {
+            refreshChart('ton_toff');
+        });
+
+        // Aktualisierung der Burst-Mode Slider-Ausgabe
+        document.getElementById('bps').addEventListener('input', function() {
+            document.getElementById('bps_output').textContent = this.value;
+            refreshChart('burst_mode');
+        });
+
+        document.getElementById('burst_t_on').addEventListener('input', function() {
+            document.getElementById('burst_t_on_output').textContent = this.value;
+            refreshChart('burst_mode');
+        });
+
+
+        // Event-Listener, um das Canvas bei Fensteränderungen dynamisch anzupassen
+        window.addEventListener('resize', resizeCanvas);
+
+        // Rufe die Funktion zur Anpassung des Canvas beim Seitenladen auf
+        resizeCanvas();
+
+        document.getElementById("single_shot_button").addEventListener("click", fireSingleShot);
+            // Standardmäßig ersten Tab öffnen
+        document.getElementById("defaultTab").click();
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+            tablinks = document.getElementsByClassName("tablink");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+
+        function updateTonToff() {
+            const t_on = document.getElementById("t_on").value;
+            const t_off = document.getElementById("t_off").value;
+
+            // Aktualisiere die Output-Elemente
+            document.getElementById("t_on_output").value = t_on;
+            document.getElementById("t_off_output").value = t_off;
+
+ 
+
+            // Sende die aktualisierten Werte asynchron per AJAX
+            fetch("/set_ton_toff", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `t_on=${t_on}&t_off=${t_off}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(`Aktuelle Werte: t_ON = ${t_on} µs, t_OFF = ${t_off} ms`);
+            });
+        }
+
+        // Funktion zur Backend-Verknüpfung für Burst-Mode
+        function updateBurstSettings() {
+            const bps = document.getElementById('bps').value;
+            const t_on = document.getElementById('burst_t_on').value;
+
+            fetch('/set_burst', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `bps=${bps}&t_on=${t_on}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Burst-Mode Update:", data);
+            })
+            .catch(error => {
+                console.error("Fehler beim Burst-Update:", error);
+            });
+        }
+        
+        function updateSingleShotTon() {
+            const singleTon = document.getElementById("single_ton").value;
+            document.getElementById("single_ton_output").value = singleTon;
+        }
+        function fireSingleShot() {
+        
+            // Funktion zum Senden des Single Shots
+            const singleTon = document.getElementById("single_ton").value;
+
+            // Überprüfen, ob der Wert für t_ON innerhalb der Grenzen liegt
+            if (singleTon > 200) {
+                document.getElementById("single-shot-error-message").innerText = "t_ON darf maximal 200 µs betragen.";
+                return;
+            }
+
+            // Sende die Anfrage ans Backend
+            fetch("/single_shot", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `t_on=${singleTon}`
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Antwort vom Backend:", data);
+                if (data.status === "success") {
+                    console.log("Single Shot erfolgreich abgefeuert:", data.message);
+                } else {
+                    console.log("Fehler:", data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Fehler bei der Anfrage:", error);
+            });
+        }
+        // Lade die verfügbaren MIDI-Dateien
+        function loadMidiFiles() {
+            fetch('/get_midi_files')
+                .then(response => response.json())
+                .then(data => {
+                    const midiSelect = document.getElementById('midi_file');
+                    
+                    // Entferne vorherige Optionen
+                    midiSelect.innerHTML = '<option value="">Wähle eine MIDI-Datei aus</option>';
+
+                    // Füge die MIDI-Dateien zur Auswahl hinzu
+                    data.files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file;
+                        option.text = file;
+                        midiSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Fehler beim Laden der MIDI-Dateien:', error);
+                });
+        }
+        let isPlaying = false;
+        let midiPlayer; // Variable für den MIDI-Player}
+        let currentPitch = 0;
+
+            // Funktion zum Umschalten zwischen Play und Stop
+        function togglePlayStop() {
+            if (!isPlaying) {
+                const selectedFile = document.getElementById("midi_file").value;
+                // Startet die Wiedergabe
+                fetch('/play_midi', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `midi_file=${encodeURIComponent(selectedFile)}` // Setze den Dateinamen hier
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        isPlaying = true;
+                        document.getElementById('playStopButton').textContent = 'Stop';  // Button ändern
+                        checkPlaybackStatus();  // Status kontinuierlich überprüfen
+                    }
+                });
+            } else {
+                // Stoppt die Wiedergabe
+                fetch('/stop_midi', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                            isPlaying = false;
+                        document.getElementById('playStopButton').textContent = 'Play';  // Button zurücksetzen
+                    }
+                });
+            }
+        }
+
+        // Funktion zur Überprüfung, ob die Wiedergabe noch läuft
+        function checkPlaybackStatus() {
+            // Solange isPlaying wahr ist, überprüfen
+            if (isPlaying) {
+                setTimeout(() => {
+                    fetch('/playback_status')  // Diese API-Route liefert den aktuellen Status
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.playing) {
+                            isPlaying = false;
+                            document.getElementById('playStopButton').textContent = 'Play';
+                        } else {
+                            checkPlaybackStatus();  // Status erneut prüfen
+                        }
+                    });
+                }, 1000);  // Jede Sekunde prüfen
+            }
+        }
+        // Funktion zum Abspielen des MIDI-Files
+        function playMidi(file) {
+            const selectedFile = document.getElementById("midi_file").value;
+            fetch(`/play_midi`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `midi_file=${file}&pitch=${currentPitch}`
+            }).then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log('MIDI abgespielt:', data.message);
+                } else {
+                    console.log('Fehler beim Abspielen:', data.message);
+                }
+                // Wenn die Wiedergabe endet, setze den Button zurück
+                stopMidi();
+                document.getElementById('playStopButton').textContent = 'Play';
+                isPlaying = false;
+            });
+        }
+
+        // Funktion zum Stoppen des MIDI-Files
+        function stopMidi() {
+            fetch(`/stop_midi`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                console.log('MIDI gestoppt:', data.message);
+            });
+        }
+        document.getElementById('midiOnTime').addEventListener('input', function() {
+        let midiMaxOnTime = this.value;
+        document.getElementById('midiOnTimeValue').textContent = midiMaxOnTime;
+
+        fetch('/set_midi_max_t_on', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `max_t_on=${midiMaxOnTime}`
+            });
+        });
+
+        document.getElementById('pitchControl').addEventListener('input', function() {
+            let currentPitch = this.value;
+            document.getElementById('pitchValue').textContent = currentPitch;
+
+            if (isPlaying) {
+                fetch('/update_pitch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `pitch=${currentPitch}`
+                });
+            }
+        });
+
+        // Rufe die Funktion auf, sobald die Seite geladen wurde
+        window.onload = function() {
+            loadMidiFiles();
+        };
+
+        function checkSoftstartStatus() {
+            fetch("/softstart_status")
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Softstart Status:", data); // Debug-Ausgabe
+        
+                    // Überprüfen, ob die benötigten HTML-Elemente existieren
+                    const statusContainer = document.getElementById("softstartStatus");
+                    const progressBar = document.getElementById("softstartProgressBar");
+                    const progressText = document.getElementById("softstartProgressText");
+        
+                    if (!statusContainer || !progressBar || !progressText) {
+                        console.error("Ein oder mehrere HTML-Elemente für die Fortschrittsanzeige fehlen!");
+                        return;
+                    }
+        
+                    if (data.active) {
+                        // Fortschrittsanzeige einblenden
+                        statusContainer.style.display = "block";
+        
+                        // Fortschrittsanzeige aktualisieren
+                        progressBar.style.width = data.progress + "%";
+                        progressText.textContent = `Softstart aktiv... ${data.progress}%`;
+        
+                        if (data.progress < 100) {
+                            setTimeout(checkSoftstartStatus, 1000); // Wiederhole die Abfrage
+                        } else {
+                            progressText.textContent = "Softstart abgeschlossen!";
+                        }
+                    } else {
+                        // Fortschrittsanzeige ausblenden, wenn nicht aktiv
+                        statusContainer.style.display = "none";
+                    }
+                })
+                .catch(error => console.error("Fehler beim Abrufen des Softstart-Status:", error));
+        }
+        
+        
+        
+
+        // Beim Einschalten des Systems Softstart starten
+        function togglePower() {
+            var powerState = document.getElementById("masterPowerSwitch").checked;  // Hole den Schalterstatus
+        
+            fetch("/toggle_power", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ power: powerState })  // Sende den aktuellen Zustand
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Power state changed:", data.message);
+            })
+            .catch(error => {
+                console.error("Error changing power state:", error);
+            });
+	}
+
+    function updatePingStatus() {
+        fetch('/ping_status')
+            .then(response => response.json())
+            .then(data => {
+                const pingValue = document.getElementById('pingValue');
+                if (data.connection_ok && data.ping_ms !== null) {
+                    pingValue.textContent = data.ping_ms;
+                    if (data.ping_ms < 80) {
+                        pingValue.style.color = "#39ff14"; // grün
+                    } else if (data.ping_ms < 200) {
+                        pingValue.style.color = "yellow";
+                    } else {
+                        pingValue.style.color = "red";
+                    }
+                } else {
+                    pingValue.textContent = "—";
+                    pingValue.style.color = "red";
+                }
+            })
+            .catch(() => {
+                const pingValue = document.getElementById('pingValue');
+                pingValue.textContent = "?";
+                pingValue.style.color = "orange";
+            });
+    }
+    setInterval(updatePingStatus, 2000);
+    window.addEventListener('DOMContentLoaded', updatePingStatus);
+    </script>
+<a href="http://192.168.178.127:5001">debug</a>
+
+<div id="pingStatus" style="position: absolute; top: 20px; right: 20px; font-weight: bold;">
+    Ping: <span id="pingValue">?</span> ms
+</div>
+</body>
+</html>

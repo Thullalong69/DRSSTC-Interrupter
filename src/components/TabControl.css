@@ -1,0 +1,35 @@
+.tab-container {
+  padding: 20px;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  background-color: #f5f5f5;
+  cursor: pointer;
+}
+
+.tab-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #0056b3;
+}
+
+.audio-control {
+  margin-top: 20px;
+}
+
+.audio-toggle {
+  padding: 15px 30px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+}
+
+.audio-toggle.off {
+  background-color: #dc3545;
+}

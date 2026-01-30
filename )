@@ -1,0 +1,106 @@
+[0;1;32m*[0m interrupter.service - DRSSTC Interrupter Service
+     Loaded: loaded (]8;;file://DRSSTC/etc/systemd/system/interrupter.service/etc/systemd/system/interrupter.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Thu 2025-01-09 20:53:58 CET; 2s ago
+   Main PID: 16181 (gunicorn: maste)
+      Tasks: 4 (limit: 4447)
+        CPU: 5.018s
+     CGroup: /system.slice/interrupter.service
+             |-[0;38;5;245m16181 "gunicorn: master [main:app]"[0m
+             |-[0;38;5;245m16182 "gunicorn: worker [main:app]"[0m
+             |-[0;38;5;245m16183 "gunicorn: worker [main:app]"[0m
+             `-[0;38;5;245m16184 "gunicorn: worker [main:app]"[0m
+
+Jan 09 20:54:03 DRSSTC gunicorn[16209]:      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16209]:   File "/usr/lib/python3/dist-packages/flask/scaffold.py", line 449, in decorator
+Jan 09 20:54:03 DRSSTC gunicorn[16209]:     self.add_url_rule(rule, endpoint, f, **options)
+Jan 09 20:54:03 DRSSTC gunicorn[16209]:   File "/usr/lib/python3/dist-packages/flask/scaffold.py", line 50, in wrapper_func
+Jan 09 20:54:03 DRSSTC gunicorn[16209]:     return f(self, *args, **kwargs)
+Jan 09 20:54:03 DRSSTC gunicorn[16209]:            ^^^^^^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16209]:   File "/usr/lib/python3/dist-packages/flask/app.py", line 1358, in add_url_rule
+Jan 09 20:54:03 DRSSTC gunicorn[16209]:     raise AssertionError(
+Jan 09 20:54:03 DRSSTC gunicorn[16209]: AssertionError: View function mapping is overwriting an existing endpoint function: start_softstart
+Jan 09 20:54:03 DRSSTC gunicorn[16209]: [2025-01-09 20:54:03 +0100] [16209] [INFO] Worker exiting (pid: 16209)
+Jan 09 20:54:03 DRSSTC gunicorn[16210]: [2025-01-09 20:54:03 +0100] [16210] [ERROR] Exception in worker process
+Jan 09 20:54:03 DRSSTC gunicorn[16210]: Traceback (most recent call last):
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "/usr/lib/python3/dist-packages/gunicorn/arbiter.py", line 589, in spawn_worker
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:     worker.init_process()
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "/usr/lib/python3/dist-packages/gunicorn/workers/base.py", line 134, in init_process
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:     self.load_wsgi()
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "/usr/lib/python3/dist-packages/gunicorn/workers/base.py", line 146, in load_wsgi
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:     self.wsgi = self.app.wsgi()
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:                 ^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "/usr/lib/python3/dist-packages/gunicorn/app/base.py", line 67, in wsgi
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:     self.callable = self.load()
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:                     ^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "/usr/lib/python3/dist-packages/gunicorn/app/wsgiapp.py", line 58, in load
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:     return self.load_wsgiapp()
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:            ^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "/usr/lib/python3/dist-packages/gunicorn/app/wsgiapp.py", line 48, in load_wsgiapp
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:     return util.import_app(self.app_uri)
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "/usr/lib/python3/dist-packages/gunicorn/util.py", line 384, in import_app
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:     mod = importlib.import_module(module)
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "/usr/lib/python3.11/importlib/__init__.py", line 126, in import_module
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:     return _bootstrap._gcd_import(name[level:], package, level)
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "/home/mthull69/Interrupter/main.py", line 111, in <module>
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:     @app.route('/start_softstart', methods=['POST'])
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "/usr/lib/python3/dist-packages/flask/scaffold.py", line 449, in decorator
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:     self.add_url_rule(rule, endpoint, f, **options)
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "/usr/lib/python3/dist-packages/flask/scaffold.py", line 50, in wrapper_func
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:     return f(self, *args, **kwargs)
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:            ^^^^^^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:   File "/usr/lib/python3/dist-packages/flask/app.py", line 1358, in add_url_rule
+Jan 09 20:54:03 DRSSTC gunicorn[16210]:     raise AssertionError(
+Jan 09 20:54:03 DRSSTC gunicorn[16210]: AssertionError: View function mapping is overwriting an existing endpoint function: start_softstart
+Jan 09 20:54:03 DRSSTC gunicorn[16211]: [2025-01-09 20:54:03 +0100] [16211] [ERROR] Exception in worker process
+Jan 09 20:54:03 DRSSTC gunicorn[16211]: Traceback (most recent call last):
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "/usr/lib/python3/dist-packages/gunicorn/arbiter.py", line 589, in spawn_worker
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:     worker.init_process()
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "/usr/lib/python3/dist-packages/gunicorn/workers/base.py", line 134, in init_process
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:     self.load_wsgi()
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "/usr/lib/python3/dist-packages/gunicorn/workers/base.py", line 146, in load_wsgi
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:     self.wsgi = self.app.wsgi()
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:                 ^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "/usr/lib/python3/dist-packages/gunicorn/app/base.py", line 67, in wsgi
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:     self.callable = self.load()
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:                     ^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "/usr/lib/python3/dist-packages/gunicorn/app/wsgiapp.py", line 58, in load
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:     return self.load_wsgiapp()
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:            ^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "/usr/lib/python3/dist-packages/gunicorn/app/wsgiapp.py", line 48, in load_wsgiapp
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:     return util.import_app(self.app_uri)
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "/usr/lib/python3/dist-packages/gunicorn/util.py", line 384, in import_app
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:     mod = importlib.import_module(module)
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "/usr/lib/python3.11/importlib/__init__.py", line 126, in import_module
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:     return _bootstrap._gcd_import(name[level:], package, level)
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "/home/mthull69/Interrupter/main.py", line 111, in <module>
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:     @app.route('/start_softstart', methods=['POST'])
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "/usr/lib/python3/dist-packages/flask/scaffold.py", line 449, in decorator
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:     self.add_url_rule(rule, endpoint, f, **options)
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "/usr/lib/python3/dist-packages/flask/scaffold.py", line 50, in wrapper_func
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:     return f(self, *args, **kwargs)
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:            ^^^^^^^^^^^^^^^^^^^^^^^^
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:   File "/usr/lib/python3/dist-packages/flask/app.py", line 1358, in add_url_rule
+Jan 09 20:54:03 DRSSTC gunicorn[16211]:     raise AssertionError(
+Jan 09 20:54:03 DRSSTC gunicorn[16211]: AssertionError: View function mapping is overwriting an existing endpoint function: start_softstart
+Jan 09 20:54:03 DRSSTC gunicorn[16210]: [2025-01-09 20:54:03 +0100] [16210] [INFO] Worker exiting (pid: 16210)
+Jan 09 20:54:03 DRSSTC gunicorn[16211]: [2025-01-09 20:54:03 +0100] [16211] [INFO] Worker exiting (pid: 16211)
