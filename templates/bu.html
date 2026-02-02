@@ -760,6 +760,7 @@
         // Beim Einschalten des Systems Softstart starten
         function togglePower() {
             var powerState = document.getElementById("masterPowerSwitch").checked;  // Hole den Schalterstatus
+            var switchEl = document.getElementById("masterPowerSwitch");
         
             fetch("/toggle_power", {
                 method: "POST",
@@ -771,10 +772,26 @@
             .then(response => response.json())
             .then(data => {
                 console.log("Power state changed:", data.message);
+                if (typeof data.power !== "undefined") {
+                    switchEl.checked = data.power;
+                }
             })
             .catch(error => {
                 console.error("Error changing power state:", error);
+                switchEl.checked = !powerState;
             });
+        }
+
+        function updatePowerStatus() {
+            fetch("/power_status")
+                .then(response => response.json())
+                .then(data => {
+                    var switchEl = document.getElementById("masterPowerSwitch");
+                    if (typeof data.power !== "undefined") {
+                        switchEl.checked = data.power;
+                    }
+                })
+                .catch(error => console.error("Fehler beim Abrufen des Power-Status:", error));
         }
 
         // Beim Einschalten des Systems Softstart starten
@@ -798,6 +815,8 @@
         }
        
        
+        window.addEventListener('DOMContentLoaded', updatePowerStatus);
+        setInterval(updatePowerStatus, 2000);
     </script>
 <a href="http://192.168.178.127:5001">debug</a>
 </body>
