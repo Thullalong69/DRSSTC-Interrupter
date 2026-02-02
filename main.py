@@ -39,7 +39,7 @@ is_playing = False  # Statusvariable für MIDI-Wiedergabe
 burst_active = False  # Globale Variable für Burst-Modus-Status
 cw_running = False
 cw_lock = threading.Lock()
-power_lock = threading.Lock()
+power_lock = threading.RLock()
 
 def play_beep(pin, freq=1000, duration_ms=200):
     """
@@ -96,14 +96,17 @@ def _stop_all_outputs():
     # Pin Low
     pi.write(INTERRUPTER_PIN, 0)
 
-def safe_power_off(reason=None):
+def safe_power_off(reason=None, beep=False, log=True):
     """
     Fail-safe: Schaltet beide Relais zuverlässig ab (active low -> HIGH = AUS).
     """
-    pi.write(SOFTSTART_PIN, 1)
-    pi.write(FULLPOWER_PIN, 1)
-    if reason:
-        print(f"[Power-Off] {reason}")
+    with power_lock:
+        pi.write(SOFTSTART_PIN, 1)
+        pi.write(FULLPOWER_PIN, 1)
+    if reason and log:
+        logging.getLogger("MIDI").warning("[Power-Off] %s", reason)
+    if beep:
+        play_beep(SPEAKER_PIN, freq=440, duration_ms=200)
 
 def get_power_state():
     """
@@ -304,6 +307,8 @@ def softstart_sequence():
     global softstart_progress, softstart_active
     softstart_active = True
     softstart_progress = 0
+    sequence_completed = False
+    fail_safe_triggered = False
 
     print("Softstart gestartet...")
 
@@ -314,17 +319,21 @@ def softstart_sequence():
             print("Relais 1 (Softstart) aktiviert.")
             time.sleep(20)  # Warte 20 Sekunden für das Vorladen der Kondensatoren
 
-            # Schalte das Relais für den direkten Betrieb ein und Softstart aus
-            pi.write(FULLPOWER_PIN, 0)
+            # Schalte Softstart aus, dann direkten Betrieb ein
             pi.write(SOFTSTART_PIN, 1)
+            pi.write(FULLPOWER_PIN, 0)
             print("Relais 2 (Direkter Betrieb) aktiviert.")
 
         # Setze den Fortschritt auf 100%
         softstart_progress = 100
+        sequence_completed = True
         print("Softstart abgeschlossen.")
     except Exception as e:
-        safe_power_off(f"Fehler während des Softstarts: {e}")
+        safe_power_off(f"Fehler während des Softstarts: {e}", beep=True)
+        fail_safe_triggered = True
     finally:
+        if not sequence_completed and not fail_safe_triggered:
+            safe_power_off("Fail-safe: Softstart-Sequenz fehlgeschlagen.", beep=True)
         softstart_active = False
     
 @app.route('/start_softstart', methods=['POST'])
@@ -555,6 +564,8 @@ def toggle_power():
     """
     data = request.get_json()
     power_state = data.get('power', False)
+    power_enabled = False
+    fail_safe_triggered = False
     
     try:
         with power_lock:
@@ -564,13 +575,14 @@ def toggle_power():
                 print("Softstart aktiviert (SOFTSTART_PIN LOW).")
                 time.sleep(20)  # Warte 20 Sekunden
 
-                # Volllast aktivieren und Softstart deaktivieren
-                pi.write(FULLPOWER_PIN, 0)
+                # Softstart explizit deaktivieren, dann Volllast aktivieren
                 pi.write(SOFTSTART_PIN, 1)
+                pi.write(FULLPOWER_PIN, 0)
                 print("325 VDC aktiviert full Mains live")
 
                 # Akustische Bestätigung
                 play_beep(SPEAKER_PIN, freq=784, duration_ms=1000)   # G5
+                power_enabled = True
 
                 power_active = get_power_state()
                 return jsonify({
@@ -588,14 +600,17 @@ def toggle_power():
                 "power": power_active
             })
     except Exception as e:
-        # Fehlerbehandlung und Notabschaltung
-        safe_power_off(f"Fehler beim Schalten: {e}")
+        safe_power_off(f"Fehler beim Schalten: {e}", beep=True)
+        fail_safe_triggered = True
         power_active = get_power_state()
         return jsonify({
             "status": "error",
             "message": f"Fehler beim Schalten: {str(e)}",
             "power": power_active
         }), 500
+    finally:
+        if power_state and not power_enabled and not fail_safe_triggered:
+            safe_power_off("Fail-safe: Aktivierung fehlgeschlagen.", beep=True)
 
 @app.route('/power_status', methods=['GET'])
 def power_status():
