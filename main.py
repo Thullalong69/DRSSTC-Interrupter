@@ -40,6 +40,7 @@ burst_active = False  # Globale Variable für Burst-Modus-Status
 cw_running = False
 cw_lock = threading.Lock()
 power_lock = threading.Lock()
+interrupter_enabled = False  # Blockiert Outputs bis t_on > 0 gesetzt ist
 
 def play_beep(pin, freq=1000, duration_ms=200):
     """
@@ -72,6 +73,21 @@ logger = logging.getLogger("MIDI")
 # MIDI-Pfad definition
 MIDI_FILES_DIR = './data/midi-files/'
 current_midi_data = []
+
+def _set_interrupter_enabled(enabled):
+    global interrupter_enabled
+    interrupter_enabled = enabled
+
+def disable_interrupter(reason=None):
+    """
+    Einheitliche Stop-Routine für den Interrupter.
+    Deaktiviert Outputs und blockiert weitere Pulse,
+    bis ein neuer gültiger t_on > 0 gesetzt wurde.
+    """
+    _set_interrupter_enabled(False)
+    _stop_all_outputs()
+    if reason:
+        logger.info(reason)
 
 def _stop_all_outputs():
     """
@@ -220,7 +236,7 @@ def set_burst():
         t_on = int(request.form.get('t_on', 0))
 
         if t_on == 0:
-            _stop_all_outputs()
+            disable_interrupter("Burst-Modus deaktiviert (t_ON = 0 µs)")
             burst_active = False
             return jsonify({
                 "status": "success",
@@ -257,6 +273,7 @@ def set_burst():
         frequency = int(1000 / period_ms)
         duty_cycle = int((t_on / 1000) / period_ms * 1_000_000)  # für pigpio
 
+        _set_interrupter_enabled(True)
         pi.hardware_PWM(INTERRUPTER_PIN, frequency, duty_cycle)
         burst_active = True
 
@@ -345,7 +362,7 @@ def start_softstart():
 def stop_midi():
     global is_playing
     is_playing = False
-    pi.hardware_PWM(INTERRUPTER_PIN, 0, 0)
+    disable_interrupter("MIDI-Wiedergabe gestoppt")
     return jsonify({'status': 'success', 'message': 'Wiedergabe gestoppt'})
 
 
@@ -357,7 +374,7 @@ def set_ton_toff():
     if t_on is None or t_off is None:
         return jsonify({"status": "error", "message": "t_ON oder t_OFF fehlt"}), 400
     if t_on == 0:
-        _stop_all_outputs()
+        disable_interrupter("t_ON = 0 µs, Interrupter deaktiviert")
         return jsonify({"status": "success", "message": "t_ON = 0 µs, Interrupter deaktiviert"})
     if t_on < 0 or t_off <= 0:
         return jsonify({"status": "error", "message": "t_ON oder t_OFF ungültig"}), 400
@@ -367,6 +384,7 @@ def set_ton_toff():
     t_total_ms = t_on / 1_000 + t_off  # Gesamtzeit in Millisekunden
     frequency = 1_000 / t_total_ms  # Frequenz in Hertz
     duty_cycle = (t_on / 1_000) / t_total_ms * 1_000_000  # Duty Cycle
+    _set_interrupter_enabled(True)
     pi.hardware_PWM(INTERRUPTER_PIN, int(frequency), int(duty_cycle))
     
     return jsonify({"status": "success", "message": f"t_ON: {t_on} µs, t_OFF: {t_off} µs"})
@@ -379,8 +397,10 @@ def set_duty_cycle():
     if duty_cycle is None or frequency is None:
         return jsonify({"status": "error", "message": "Ungültige Eingabedaten"}), 400
     if duty_cycle <= 0:
-        _stop_all_outputs()
+        disable_interrupter("Duty Cycle = 0%, Interrupter deaktiviert")
         return jsonify({"status": "success", "message": "Duty Cycle = 0%, Interrupter deaktiviert"}), 200
+    if not interrupter_enabled:
+        return jsonify({"status": "error", "message": "Interrupter blockiert, setze zuerst t_ON > 0"}), 400
 
     # Berechne die on-time in Mikrosekunden
     period_us = (1 / frequency) * 1_000_000  # Periode in Mikrosekunden
@@ -408,6 +428,11 @@ def single_shot():
         return jsonify({
             "status": "error",
             "message": f"t_ON muss zwischen 1 und {MAX_T_ON} µs liegen"
+        }), 400
+    if not interrupter_enabled:
+        return jsonify({
+            "status": "error",
+            "message": "Interrupter blockiert, setze zuerst t_ON > 0"
         }), 400
 
     try:
@@ -478,6 +503,9 @@ def play_midi_file(filepath):
 
                 if ev_type == 0x90:
                     logger.info(f"[{timestamp}] NOTE_ON: {note}, Velocity: {vel}")
+                    if not interrupter_enabled:
+                        logger.info("Interrupter blockiert, NOTE_ON ignoriert")
+                        continue
 
                     now_ns = time.perf_counter_ns()
                     if now_ns - last_trigger_time < NOTE_BLOCK_TIME_US * 1000:
@@ -503,14 +531,14 @@ def play_midi_file(filepath):
 
                 elif ev_type == 0x80 and note == active_note:
                     logger.info(f"[{timestamp}] NOTE_OFF: {note}")
-                    pi.hardware_PWM(INTERRUPTER_PIN, 0, 0)
+                    disable_interrupter("NOTE_OFF: Interrupter deaktiviert")
                     active_note = None
 
     except Exception as e:
         logger.error(f"Fehler beim Abspielen der Datei: {e}")
     finally:
         is_playing = False
-        pi.hardware_PWM(INTERRUPTER_PIN, 0, 0)
+        disable_interrupter("MIDI-Wiedergabe abgeschlossen oder abgebrochen")
         logger.info("Wiedergabe abgeschlossen oder abgebrochen.")
 
 
@@ -525,6 +553,7 @@ def set_midi_max_t_on():
     if new_ton is None or new_ton <= 0 or new_ton > MAX_T_ON:
         return jsonify({'status': 'error', 'message': f"max_t_on muss zwischen 1 und {MAX_T_ON} µs liegen"}), 400
     MIDI_MAX_T_ON = new_ton
+    _set_interrupter_enabled(True)
     return jsonify({'status': 'success', 'message': f"max_t_on auf {MIDI_MAX_T_ON} µs gesetzt"})
 
 def calculate_max_duty_cycle(freq, max_t_on):
