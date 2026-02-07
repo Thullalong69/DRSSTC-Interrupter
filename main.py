@@ -314,9 +314,14 @@ def softstart_sequence():
             print("Relais 1 (Softstart) aktiviert.")
             time.sleep(20)  # Warte 20 Sekunden für das Vorladen der Kondensatoren
 
+<<<<<<< HEAD
             # Schalte das Relais für den direkten Betrieb ein und Softstart aus
             pi.write(FULLPOWER_PIN, 0)
             pi.write(SOFTSTART_PIN, 1)
+=======
+            # Schalte das Relais für den direkten Betrieb ein
+            pi.write(FULLPOWER_PIN, 0)
+>>>>>>> pr-2
             print("Relais 2 (Direkter Betrieb) aktiviert.")
 
         # Setze den Fortschritt auf 100%
@@ -564,9 +569,14 @@ def toggle_power():
                 print("Softstart aktiviert (SOFTSTART_PIN LOW).")
                 time.sleep(20)  # Warte 20 Sekunden
 
+<<<<<<< HEAD
                 # Volllast aktivieren und Softstart deaktivieren
                 pi.write(FULLPOWER_PIN, 0)
                 pi.write(SOFTSTART_PIN, 1)
+=======
+                # Volllast aktivieren
+                pi.write(FULLPOWER_PIN, 0)
+>>>>>>> pr-2
                 print("325 VDC aktiviert full Mains live")
 
                 # Akustische Bestätigung
