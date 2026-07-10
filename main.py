@@ -3,6 +3,7 @@ import subprocess
 import math
 import struct
 import os
+import re
 import logging
 import threading
 from matplotlib.transforms import offset_copy
@@ -533,6 +534,10 @@ def calculate_max_duty_cycle(freq, max_t_on):
     duty = (on_time / period) * 1_000_000
     return min(int(duty), 1_000_000)
 
+def natural_sort_key(name):
+    """Case-insensitive natural sort key for file names without extensions."""
+    return [int(part) if part.isdigit() else part.casefold() for part in re.split(r'(\d+)', name)]
+
 @app.route('/playback_status', methods=['GET'])
 def playback_status():
     return jsonify({'playing': is_playing})
@@ -544,6 +549,9 @@ def get_midi_files():
 
     # Entferne eventuell vorhandene Dateiendungen (z.B. .dat)
     midi_files = [os.path.splitext(f)[0] for f in midi_files]
+
+    # Sortiere nach den angezeigten Namen; natürliche Sortierung hält song2 vor song10.
+    midi_files = sorted(midi_files, key=natural_sort_key)
 
     return jsonify({'files': midi_files})
 
