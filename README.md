@@ -165,7 +165,7 @@ nicht für HTTP über das LAN. Ein HTTPS-Ursprung und diese Ausnahme können nic
 kombiniert werden.
 
 Beim ausdrücklichen Start werden Prozesssperre und Anmeldung geprüft, die lokale
-pigpio-Verbindung geprüft, Relais auf AUS und Interrupter auf LOW vorbereitet und
+pigpio-Verbindung über `localhost:8888` (IPv6/IPv4) geprüft, Relais auf AUS und Interrupter auf LOW vorbereitet und
 erst danach die Ready-LED gesetzt. Kein Softstart oder Puls wird dabei ausgelöst.
 SIGTERM, SIGINT, Serverfehler und normaler Programmabschluss führen zu Abschaltversuchen,
 Schließen der pigpio-Verbindung und Freigabe der Prozesssperre. Vor einem Austausch

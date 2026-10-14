@@ -657,7 +657,8 @@ def initialize_hardware(lock_path):
     owner.acquire()
     runtime_owner = owner
     try:
-        pi = pigpio.pi('127.0.0.1')
+        # socket.create_connection tries localhost IPv6/IPv4 addresses.
+        pi = pigpio.pi('localhost', 8888)
         if not pi.connected:
             raise RuntimeError('pigpio-Daemon ist nicht erreichbar')
         # Relays OFF and interrupter LOW before ready indication or any wait.

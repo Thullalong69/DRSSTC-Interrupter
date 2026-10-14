@@ -45,8 +45,9 @@ class RuntimeTests(unittest.TestCase):
 
     def test_startup_sets_outputs_off_before_ready_indicator(self):
         gpio = FakeGPIO()
-        with patch('pigpio.pi', return_value=gpio), patch('threading.Thread.start'):
+        with patch('pigpio.pi', return_value=gpio) as connect, patch('threading.Thread.start'):
             main.initialize_hardware(self.root / 'lock')
+        connect.assert_called_once_with('localhost', 8888)
         self.assertEqual(gpio.calls[:3], [(main.SOFTSTART_PIN, 1), (main.FULLPOWER_PIN, 1), (main.INTERRUPTER_PIN, 0)])
         self.assertEqual(gpio.calls[-1], (main.READY_LED_PIN, 1))
         self.assertTrue(main.runtime_ready)
