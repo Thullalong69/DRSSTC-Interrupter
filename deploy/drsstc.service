@@ -1,0 +1,29 @@
+[Unit]
+Description=DRSSTC Interrupter (one GPIO owner)
+After=network.target pigpiod.service
+Requires=pigpiod.service
+
+[Service]
+Type=simple
+User=drsstc
+Group=drsstc
+WorkingDirectory=/opt/drsstc
+EnvironmentFile=/etc/drsstc/environment
+Environment=DRSSTC_CREDENTIALS=/var/lib/drsstc/auth.json
+Environment=DRSSTC_LOCK_FILE=/run/drsstc/controller.lock
+RuntimeDirectory=drsstc
+RuntimeDirectoryMode=0700
+ExecStart=/opt/drsstc/.venv/bin/python /opt/drsstc/run.py
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=10
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/run/drsstc
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

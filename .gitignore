@@ -5,3 +5,7 @@ __pycache__/
 .venv/
 .idea/
 .vscode/
+auth.json
+*-auth.json
+*.lock
+.coverage

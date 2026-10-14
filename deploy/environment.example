@@ -1,0 +1,2 @@
+# Set the actual HTTPS name/IP used in the browser before enabling the service.
+DRSSTC_PUBLIC_ORIGIN=https://interrupter.example
