@@ -4,6 +4,23 @@ Flask-Steuerung für einen Raspberry Pi mit pigpio: t_ON/t_OFF, Burst/BPS,
 Einzelpulse und konvertierte MIDI-Dateien. Die angegebene Hardware ist eine
 CM400DY-24NF-Fullbridge. CW wurde vollständig entfernt.
 
+## GPIO-Belegung
+
+Die Belegung entspricht der vorhandenen Verkabelung am Raspberry Pi.
+Alle GPIO-Nummern verwenden BCM-Nummerierung.
+
+| Funktion | BCM GPIO | Physischer Pin (40-poliger Header) |
+| --- | --- | --- |
+| Ready-LED | 26 | 37 |
+| Softstart | 6 | 31 |
+| Vollleistungsrelais | 5 | 29 |
+| Interrupter | 13 | 33 |
+| Lautsprecher | 19 | 35 |
+
+Die Software verwendet für die Leistungsrelais LOW als EIN und HIGH als AUS.
+Diese Polarität muss vor dem Hardwarestart mit der vorhandenen Schaltung
+abgeglichen werden. GPIO 13 unterstützt die verwendete Hardware-PWM.
+
 ## Softwaregrenzen
 
 Die gemeinsamen Grenzwerte in `signal_limits.py` sind:

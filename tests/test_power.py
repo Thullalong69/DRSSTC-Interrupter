@@ -13,7 +13,7 @@ class FakeGPIO:
     connected = True
 
     def __init__(self):
-        self.levels = {20: 1, 21: 1}
+        self.levels = {main.SOFTSTART_PIN: 1, main.FULLPOWER_PIN: 1}
         self.calls = []
         self.fail_pin = None
 

@@ -38,11 +38,11 @@ runtime_ready = False
 # Festlegung der GPIO-Pins
 
 # GPIO-Pins definieren
-READY_LED_PIN = 16 # GPIO für die System Ready LED
-SOFTSTART_PIN = 20  # GPIO für den 56-Ohm-Widerstand (Softstart)
-FULLPOWER_PIN = 21  # GPIO für den Bypass des Widerstands (Vollbetrieb)
-INTERRUPTER_PIN = 12 # GPIO-Pin für das Interrupter-Signal
-SPEAKER_PIN = 13 # GPIO-Pin für akustische Signale
+READY_LED_PIN = 26 # GPIO für die System Ready LED
+SOFTSTART_PIN = 6  # GPIO für den 56-Ohm-Widerstand (Softstart)
+FULLPOWER_PIN = 5  # GPIO für den Bypass des Widerstands (Vollbetrieb)
+INTERRUPTER_PIN = 13 # GPIO-Pin für das Interrupter-Signal
+SPEAKER_PIN = 19 # GPIO-Pin für akustische Signale
 # Globale Variable für Softstart-Fortschritt
 softstart_progress = 0
 softstart_active = False
